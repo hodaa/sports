@@ -8,6 +8,7 @@ use App\Models\Week;
 use App\Http\Requests\WeekRequest;
 use Illuminate\Http\JsonResponse;
 use App\Http\Requests\SeasonRequest;
+use Illuminate\Support\Facades\Cache;
 
 class WeekController extends Controller
 {
@@ -46,7 +47,8 @@ class WeekController extends Controller
      */
     public function index()
     {
-        return response()->json([Week::paginate(20)]);
+        $weeks = Cache::get('seasons', Week::paginate(20));
+        return response()->json(["data"=>$weeks]);
     }
     /**
      * @OA\Post  (

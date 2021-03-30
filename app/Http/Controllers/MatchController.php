@@ -5,16 +5,25 @@ namespace App\Http\Controllers;
 use App\Http\Requests\MatchRequest;
 use App\Http\Resources\MatchResource;
 use App\Models\Match;
+use App\Services\MatchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
-use Illuminate\Support\Facades\Cache;
+use App\Services\CrudService;
 
 class MatchController extends Controller
 {
+    private $crudService;
+    private $matchService;
+
+    public function __construct(MatchService $matchService)
+    {
+        $this->crudService = new CrudService(new Match());
+        $this->matchService = $matchService;
+    }
     /**
      * @OA\Get (
-     ** path="/api/v1/matches",
+     ** path="/api/v1/matches/",
      *   tags={"Matches"},
      *   operationId="matches",
      *
@@ -68,18 +77,13 @@ class MatchController extends Controller
         $query = new Match();
 
         if ($request->week) {
-            $query->join('weeks', 'weeks.id', '=', 'matches.week_id')
-                ->where('weeks.week', $request->week);
+            $query = $this->matchService->filterByWeek($query, $request->week);
         }
         if ($request->year) {
-            if (!$request->week) {
-                $query->join('weeks', 'weeks.id', '=', 'matches.week_id');
-            }
-            $query->join('seasons', 'seasons.id', '=', 'weeks.season')
-                ->where('seasons.year', $request->year);
+            $query = $this->matchService->filterByYear($query, $request->year, $request->week);
         }
 
-        return response()->json(["data"=> MatchResource::collection($query->get())]);
+        return response()->json(["data"=> MatchResource::collection($query->paginate(20))]);
     }
 
     /**
@@ -165,14 +169,10 @@ class MatchController extends Controller
         $data= $request->input();
         $match = new Match();
 
-
         if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $name = time().".".$image->getClientOriginalExtension();
-            $path= '/images/matches';
-            $image->move(public_path($path), $name, 0777, true);
-            $data['image']= $path."/".$name;
+            $data['image'] = $this->matchService->uploadImage($request->file('image'));
         }
+
         $match= $match->create($data);
 
         return response()->json([
@@ -184,46 +184,18 @@ class MatchController extends Controller
 
     /**
      * @OA\Get  (
-     ** path="/api/v1/Matchs/",
+     ** path="/api/v1/matches/{id}",
      *   tags={"Matches"},
      *   operationId="Matchs",
      *
-     *   @OA\Parameter(
-     *      name="title",
-     *      in="query",
-     *      required=true,
-     *      @OA\Schema(
-     *           type="string"
-     *      )
-     *   ),
-
-     *      @OA\Parameter(
-     *      name="week",
-     *      in="query",
+     *     @OA\Parameter(
+     *      name="id",
+     *      in="path",
      *      required=true,
      *      @OA\Schema(
      *           type="integer"
      *      )
      *   ),
-     * @OA\Parameter(
-     *      name="video",
-     *      in="query",
-     *      required=false,
-     *      @OA\Schema(
-     *           type="string"
-     *      )
-     *   ),
-     *
-     *   @OA\Parameter(
-     *      name="image",
-     *      in="query",
-     *      required=false,
-     *      @OA\Schema(
-     *           type="file"
-     *      )
-     *   ),
-
-
      *   @OA\Response(
      *       response=201,
      *       description="Success",
@@ -250,34 +222,68 @@ class MatchController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
-     * @return Response
+     * @param int $id
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show($id): JsonResponse
     {
-        return response()->json(["data" => new MatchResource(Match::find($id))]);
+        return response()->json(["data" => new MatchResource(Match::findOrFail($id))]);
     }
 
     /**
      * @OA\Put   (
-     ** path="/api/v1/Matchs/1",
+     ** path="/api/v1/matches/{id}",
      *   tags={"Matches"},
      *   operationId="Matchs",
      *
-     *   @OA\Parameter(
-     *      name="name",
-     *      in="query",
+     *
+     *  @OA\Parameter(
+     *      name="id",
+     *      in="path",
      *      required=true,
+     *      @OA\Schema(
+     *           type="integer"
+     *      )
+     *   ),
+     *
+     *   @OA\Parameter(
+     *      name="title",
+     *      in="query",
+     *      required=false,
      *      @OA\Schema(
      *           type="string"
      *      )
      *   ),
      *   @OA\Parameter(
-     *      name="year",
+     *      name="description",
      *      in="query",
-     *      required=true,
+     *      required=false,
      *      @OA\Schema(
      *          type="string"
+     *      )
+     *   ),
+     *  @OA\Parameter(
+     *      name="image",
+     *      in="query",
+     *      required=false,
+     *      @OA\Schema(
+     *          type="file"
+     *      )
+     *   ),
+     * @OA\Parameter(
+     *      name="video",
+     *      in="query",
+     *      required=false,
+     *      @OA\Schema(
+     *          type="string"
+     *      )
+     *   ),
+     *    * @OA\Parameter(
+     *      name="week_id",
+     *      in="query",
+     *      required=false,
+     *      @OA\Schema(
+     *          type="integer"
      *      )
      *   ),
      *   @OA\Response(
@@ -312,10 +318,15 @@ class MatchController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $Match = Match::findOrFail($id);
-        $Match->update($request->input());
+        $data=$request->input();
+        $match = Match::findOrFail($id);
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $this->matchService->uploadImage($request->file('image'));
+        }
+        $match->update($data);
         return response()->json([
-            "data" => new MatchResource($Match),
+            "data" => new MatchResource($match),
             'message'=>"Match updated Successfully"
         ], 201);
     }
@@ -323,7 +334,7 @@ class MatchController extends Controller
 
     /**
      * @OA\Delete    (
-     ** path="/api/v1/matchs/1",
+     ** path="/api/v1/matches/{id}",
      *   tags={"Matches"},
      *   operationId="Matchs",
      *
@@ -368,11 +379,11 @@ class MatchController extends Controller
     public function destroy(int $id): JsonResponse
     {
         Match::findorFail($id)->delete();
-        return response()->json(["data" => "Match deleted successfully"]);
+        return response()->json(["message" => "Match deleted successfully"]);
     }
     /**
      * @OA\Get (
-     ** path="/api/v1/matches",
+     ** path="/api/v1/matches-by-year",
      *   tags={"Matches"},
      *   operationId="matches",
      *
@@ -407,8 +418,11 @@ class MatchController extends Controller
          $matches = Match::join('weeks', 'weeks.id', '=', 'matches.week_id')
             ->join('seasons', 'seasons.id', 'weeks.season_id')
              ->select('seasons.year', 'matches.id', 'matches.title')
-            ->groupBy('seasons.year', 'matches.id')
-            ->get();
-         return response()->json($matches);
+            ->groupBy('seasons.year')
+            ->select('seasons.year')
+            ->selectRaw("count(matches.id) as matches_count")
+             ->get();
+
+         return response()->json(["data"=>$matches]);
     }
 }

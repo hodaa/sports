@@ -26,7 +26,7 @@ class SeasonApiTest extends TestCase
         $response = $this->get('/api/v1/seasons');
 
         $response->assertStatus(200);
-        $this->assertCount(1, $response->json()[0]['data']);
+        $this->assertCount(1, $response->json()['data']);
     }
 
     public function testGetSeasonById()
@@ -43,6 +43,6 @@ class SeasonApiTest extends TestCase
             'year' => '2010'
         ]);
 
-        $response->assertStatus(201)->assertJson(["data"=>['name'=>'season_1','year'=> "2021"]]);
+        $response->assertStatus(201)->assertJson(["data"=>['name'=>'season_2','year'=> 2010]]);
     }
 }

@@ -8,10 +8,16 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Http\Requests\SeasonRequest;
 use Illuminate\Support\Facades\Cache;
+use App\Services\CrudService;
 
 class SeasonController extends Controller
 {
+    private $crudService;
 
+    public function __construct()
+    {
+        $this->crudService= new CrudService(new Season());
+    }
     /**
      * @OA\Get (
      ** path="/api/v1/seasons",
@@ -101,8 +107,6 @@ class SeasonController extends Controller
      */
     public function store(SeasonRequest $request): JsonResponse
     {
-
-
         $data= $request->input();
         $season = new Season();
         $season= $season->create($data);

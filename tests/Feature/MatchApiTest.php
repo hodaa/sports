@@ -15,7 +15,9 @@ class MatchApiTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        Season::factory()->create(['name'=>'season_1','year'=>2021]);
+        $season = Season::factory()->create(['name'=>'season_1','year'=>2021]);
+        $week = week::factory()->create(['title'=>'week_1','season_id'=> $season->id]);
+        Match::factory()->create(['title'=>'match_1','week_id'=>$week->id]);
     }
 
     /**
@@ -28,38 +30,16 @@ class MatchApiTest extends TestCase
         $response = $this->get('/api/v1/matches');
 
         $response->assertStatus(200);
-        $this->assertCount(1, $response->json()[0]['data']);
+        $this->assertCount(1, $response->json()['data']);
     }
 
-    public function testGetSeasonById()
+    public function testGetMatchById()
     {
         $response = $this->get('/api/v1/matches/1');
 
-        $response->assertStatus(200)->assertJson(["data"=>['name'=>'season_1','year'=> "2021"]]);
+        $response->assertStatus(200)->assertJson(["data"=>['title'=>'match_1','week'=> 'week_1']]);
     }
 
-    public function testCreateSeason()
-    {
-        $response = $this->post('/api/v1/matches/', [
-            'name' => 'season_2',
-            'year' => '2010'
-        ]);
-
-        $response->assertStatus(201)->assertJson(["data"=>['name'=>'season_1','year'=> "2021"]]);
-    }
-
-
-    public function testGetByYear()
-    {
-        $season = Season::factory()->create(['name'=>'season_1','year'=>2020]);
-        Week::factory()->create(['title'=>'week_1','season_id'=>$season->id,'week'=>1]);
-        Match::factory()->create(['title'=>'match_1','description'=>'des','week_id'=>1]);
-        Match::factory()->create(['title'=>'match_2','description'=>'des','week_id'=>1]);
-        $response = $this->get('/api/v1/matches-by-year');
-        dd($response);
-
-        $response->assertStatus(201)->assertJson(["data"=>['name'=>'season_1','year'=> "2021"]]);
-    }
 
     /**
      * @throws \PHPUnit\Framework\Exception
@@ -79,6 +59,6 @@ class MatchApiTest extends TestCase
         $response = $this->get('/api/v1/matches?week=1');
 
         $response->assertStatus(200);
-        $this->assertCount(1, $response->json()['data']);
+        $this->assertCount(3, $response->json()['data']);
     }
 }

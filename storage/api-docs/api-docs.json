@@ -9,7 +9,7 @@
         "version": "1.0.0"
     },
     "paths": {
-        "/api/v1/matches": {
+        "/api/v1/matches/": {
             "get": {
                 "tags": [
                     "Matches"
@@ -47,7 +47,9 @@
                         "description": "Forbidden"
                     }
                 }
-            },
+            }
+        },
+        "/api/v1/matches": {
             "post": {
                 "tags": [
                     "Matches"
@@ -114,7 +116,7 @@
                 }
             }
         },
-        "/api/v1/Matchs/": {
+        "/api/v1/matches/{id}": {
             "get": {
                 "tags": [
                     "Matches"
@@ -122,35 +124,11 @@
                 "operationId": "Matchs",
                 "parameters": [
                     {
-                        "name": "title",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "week",
-                        "in": "query",
+                        "name": "id",
+                        "in": "path",
                         "required": true,
                         "schema": {
                             "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "video",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "image",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "file"
                         }
                     }
                 ],
@@ -171,9 +149,7 @@
                         "description": "Forbidden"
                     }
                 }
-            }
-        },
-        "/api/v1/Matchs/1": {
+            },
             "put": {
                 "tags": [
                     "Matches"
@@ -181,19 +157,51 @@
                 "operationId": "Matchs",
                 "parameters": [
                     {
-                        "name": "name",
-                        "in": "query",
+                        "name": "id",
+                        "in": "path",
                         "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "title",
+                        "in": "query",
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
                     },
                     {
-                        "name": "year",
+                        "name": "description",
                         "in": "query",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "image",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    {
+                        "name": "video",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "week_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
                 ],
@@ -236,6 +244,28 @@
                         "content": {
                             "application/json": {}
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "not found"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                }
+            }
+        },
+        "/api/v1/matches-by-year": {
+            "get": {
+                "tags": [
+                    "Matches"
+                ],
+                "operationId": "matches",
+                "responses": {
+                    "200": {
+                        "description": "Success"
                     },
                     "400": {
                         "description": "Bad Request"

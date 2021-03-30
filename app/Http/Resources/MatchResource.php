@@ -20,7 +20,8 @@ class MatchResource extends JsonResource
             'description' => $this->title,
             'image' => $this->image ? url($this->image) : null,
             'video' => $this->video,
-            'week'=> $this->week->title
+            'week'=> optional($this->week)->title,
+            'season'=> optional(optional($this->week)->season)->name
         ];
     }
 }

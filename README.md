@@ -6,7 +6,8 @@ bus-booking system
 * `cp .env.example to .env`
 
 set DB_HOST:db
-If you want to use redis as driver for caching please 
+
+* If you want to use redis as driver for caching please 
 change 
 REDIS_HOST:redis
 

@@ -4,6 +4,12 @@ bus-booking system
 ## Installation
 
 * `cp .env.example to .env`
+
+set DB_HOST:db
+If you want to use redis as driver for caching please 
+change 
+REDIS_HOST:redis
+
 * `docker-compose build`
 * `docker-compose up -d`
 
@@ -32,12 +38,7 @@ docker-compose exec php vendor/phpunit/bin
 http://localhost:8081/api/documentation
 
 
-## Usage
 
- 2. Import collection directly: https://www.getpostman.com/collections/b7dd975e95031cf62429 
-
-
-    
 
     
 
